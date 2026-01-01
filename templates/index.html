@@ -1,0 +1,262 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head> 
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGROBOAT | CODE TO GROWTH</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"> 
+
+<style> 
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Poppins', sans-serif; 
+} 
+
+/* 🔹 ADDED: Fix mobile full height */
+html, body {
+    height: 100%;
+}
+
+body {
+    min-height: 100svh; /* 🔹 ADDED: Mobile-safe full height */
+    background-image: linear-gradient(
+        rgba(0, 0, 0, 0.4),  
+        rgba(0, 0, 0, 0.4)
+    ),
+    url("{{ url_for('static', filename='agro3.png') }}"); 
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center; /* 🔹 ADDED */
+    background-attachment: fixed;       /* 🔹 ADDED */
+
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 0; /* 🔹 CHANGED: removed gaps on mobile */
+}
+
+.chat-container { 
+    width: 100%; 
+    max-width: 420px; 
+    height: 90vh; 
+    background: rgba(2, 6, 23, 0.85);
+    backdrop-filter: blur(12px); 
+    border-radius: 18px; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+.chat-header { 
+    background: linear-gradient(135deg, #22c55e, #16a34a); 
+    padding: 16px; 
+    text-align: center; 
+    color: white; 
+}
+
+.chat-box { 
+    flex: 1; 
+    padding: 15px; 
+    overflow-y: auto; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    background: #030c29; 
+}
+
+.message { 
+    max-width: 80%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    white-space: pre-line; 
+    animation: fadeIn 0.3s ease;
+}
+
+.bot {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    color: #e5e7eb;
+    align-self: flex-start;
+    border-top-left-radius: 4px;
+}
+
+.user {
+    background: linear-gradient(145deg, #22c55e, #16a34a);
+    color: #022c22;
+    align-self: flex-end;
+    border-top-right-radius: 4px;
+}
+
+.chat-input {
+    display: flex;
+    padding: 10px;
+    background: #020617;
+    border-top: 1px solid #1e293b;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 0.9rem;
+    background: #1e293b;
+    color: white;
+}
+
+.chat-input button {
+    margin-left: 8px;
+    background: #22c55e;
+    border: none;
+    padding: 0 16px;
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.chat-input button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.6);
+    background: #16a34a;
+}
+
+/* 🎤 MIC BUTTON */
+#micBtn {
+    background: linear-gradient(145deg, #0ea5e9, #0284c7);
+    color: white;
+    font-size: 1.2rem;
+}
+#micBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(14,165,233,0.7);
+}
+#micBtn.listening {
+    background: red;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,0,0,0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(255,0,0,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,0,0,0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🔹 ADDED: Mobile full-screen optimization */
+@media (max-width: 600px) {
+    .chat-container {
+        width: 100%;
+        height: 100svh;
+        max-width: 100%;
+        border-radius: 0;
+    }
+
+    .chat-box {
+        padding-bottom: 80px;
+    }
+
+    .chat-input {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 10;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>🌱 AGROBOAT</h1>
+        <p>Powered by CODE TO GROWTH</p>
+    </div>
+
+    <div class="chat-box" id="chatBox">
+        <div class="message bot">
+            Hello 👋 I'm <b>AGROBOAT</b>.  
+            How can I help you today?
+        </div>
+    </div>
+
+    <div class="chat-input">
+        <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" />
+        <button id="micBtn">🎤</button>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
+const micBtn = document.getElementById("micBtn");
+
+function sendMessage() {
+    const text = userInput.value.trim();
+    if (text === "") return;
+
+    addMessage(text, "user");
+    userInput.value = "";
+
+    fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+    })
+    .then(response => response.json())
+    .then(data => addMessage(data.reply, "bot"))
+    .catch(() => addMessage("❌ Server error. Check backend.", "bot"));
+}
+
+function addMessage(text, sender) {
+    const msg = document.createElement("div");
+    msg.classList.add("message", sender);
+    msg.innerHTML = text;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+userInput.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+});
+
+/* 🎙️ Voice Input */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+
+    micBtn.onclick = () => {
+        recognition.start();
+        micBtn.classList.add("listening");
+    };
+
+    recognition.onresult = event => {
+        userInput.value = event.results[0][0].transcript;
+        sendMessage();
+    };
+
+    recognition.onend = () => micBtn.classList.remove("listening");
+} else {
+    micBtn.disabled = true;
+    micBtn.innerText = "❌";
+}
+</script>
+</body>
+</html>
