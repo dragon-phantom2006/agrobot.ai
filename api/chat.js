@@ -5,7 +5,7 @@ const genai = new GoogleGenerativeAI(
 );
 
 const model = genai.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: "gemini-1.5-flash",
 });
 
 export default async function handler(req, res) {
@@ -48,4 +48,5 @@ export default async function handler(req, res) {
     res.status(500).json({ reply: "❌ Backend error" });
   }
 }
+
 
