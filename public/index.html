@@ -157,6 +157,7 @@ body {
 <script>
   const input = document.getElementById("userInput");
   const chatBox = document.getElementById("chatBox");
+  const micBtn = document.getElementById("micBtn");
 
   function sendMessage() {
     const text = input.value.trim();
@@ -179,8 +180,45 @@ body {
       chatBox.innerHTML += `<div class="message bot">❌ Server error</div>`;
     });
   }
+
+  // 🎤 MICROPHONE LOGIC STARTS HERE
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    micBtn.addEventListener("click", () => {
+      recognition.start();
+      micBtn.textContent = "🎙️";
+    });
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      input.value = transcript;
+      micBtn.textContent = "🎤";
+    };
+
+    recognition.onerror = () => {
+      micBtn.textContent = "🎤";
+      alert("Microphone error. Please allow mic access.");
+    };
+
+    recognition.onend = () => {
+      micBtn.textContent = "🎤";
+    };
+  } else {
+    micBtn.disabled = true;
+    micBtn.textContent = "❌";
+    alert("Speech Recognition not supported in this browser.");
+  }
 </script>
 
 
+
 </body>
+
 </html>
