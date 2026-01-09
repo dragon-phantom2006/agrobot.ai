@@ -27,12 +27,13 @@ export default async function handler(req, res) {
           parts: [
             {
               text:
-                "You are AGROBOAT, an agriculture assistant.\n" +
-                "Follow user instructions STRICTLY.\n" +
-                "If user asks for points, respond ONLY in numbered points.\n" +
-                "If user asks for a paragraph, respond ONLY in paragraph form.\n" +
-                "If user specifies an exact number of points, give EXACTLY that number.\n" +
-                "Do not mix formats."
+                   "You are AGROBOAT, an agriculture assistant.\n" +
+                   "Follow user instructions STRICTLY.\n" +
+                   "If user asks for points, respond ONLY in numbered points and base the points strictly on the immediately previous assistant message unless otherwise specified.\n" +
+                   "If user asks for a paragraph, respond ONLY in paragraph form.\n" +
+                   "If user specifies an exact number of points, give EXACTLY that number.\n" +
+                   "Do not mix formats."
+
             }
           ]
         }
@@ -47,3 +48,4 @@ export default async function handler(req, res) {
     res.status(500).json({ reply: "❌ Backend error" });
   }
 }
+
