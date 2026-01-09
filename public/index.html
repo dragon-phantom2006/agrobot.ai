@@ -93,6 +93,8 @@ body {
 
 .chat-input {
     display: flex;
+    align-items: center;
+    gap: 6px;
     padding: 10px;
     background: #020617;
     border-top: 1px solid #1e293b;
@@ -104,31 +106,109 @@ body {
     border-radius: 10px;
     border: none;
     outline: none;
-    font-size: 0.9rem;
+    font-size: 16px; /* prevents mobile zoom */
     background: #1e293b;
     color: white;
 }
 
 .chat-input button {
-    margin-left: 8px;
+    flex-shrink: 0;
+    height: 42px;
     background: #22c55e;
     border: none;
-    padding: 0 16px;
+    padding: 0 14px;
     border-radius: 10px;
     font-weight: 500;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 #micBtn {
+    flex-shrink: 0;
+    height: 42px;
     background: linear-gradient(145deg, #0ea5e9, #0284c7);
     color: white;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+}
+
+/* 📱 MOBILE FRIENDLY CHANGES (ONLY ADDITION) */
+@media (max-width: 480px) {
+
+  body {
+    padding: 10px;
+  }
+
+  .chat-container {
+    width: 100%;
+    max-width: 100%;
+    height: 95svh;
+    border-radius: 14px;
+  }
+
+  .chat-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .chat-header p {
+    font-size: 0.75rem;
+  }
+
+  .message {
+    max-width: 90%;
+    font-size: 0.85rem;
+  }
+
+  .chat-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px;
+    background: #020617;
+    border-top: 1px solid #1e293b;
+  }
+
+  .chat-input input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    font-size: 16px; /* prevents mobile zoom */
+    background: #1e293b;
+    color: white;
+  }
+
+  .chat-input button {
+    flex-shrink: 0;
+    height: 42px;
+    background: #22c55e;
+    border: none;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  #micBtn {
+    flex-shrink: 0;
+    height: 42px;
+    background: linear-gradient(145deg, #0ea5e9, #0284c7);
+    color: white;
+    font-size: 1.1rem;
+  }
 }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
+    @media (max-width: 480px) {
+  .chat-input {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 </style>
 </head>
 
@@ -157,6 +237,7 @@ body {
 <script>
   const input = document.getElementById("userInput");
   const chatBox = document.getElementById("chatBox");
+  const micBtn = document.getElementById("micBtn");
 
   function sendMessage() {
     const text = input.value.trim();
@@ -179,8 +260,30 @@ body {
       chatBox.innerHTML += `<div class="message bot">❌ Server error</div>`;
     });
   }
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+
+    micBtn.addEventListener("click", () => {
+      recognition.start();
+      micBtn.textContent = "🎙️";
+    });
+
+    recognition.onresult = (event) => {
+      input.value = event.results[0][0].transcript;
+      micBtn.textContent = "🎤";
+    };
+
+    recognition.onend = () => {
+      micBtn.textContent = "🎤";
+    };
+  }
 </script>
 
-
 </body>
+</html>
 </html>
