@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genai = new GoogleGenerativeAI(
-  process.env.AIzaSyAiZSdH_Nh9_NRFG1UW8cWHZZqF559ugJ8
+  process.env.MY_GEMINI_KEY
 );
 
 const model = genai.getGenerativeModel({
@@ -48,4 +48,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
 
