@@ -93,6 +93,8 @@ body {
 
 .chat-input {
     display: flex;
+    align-items: center;
+    gap: 6px;
     padding: 10px;
     background: #020617;
     border-top: 1px solid #1e293b;
@@ -104,25 +106,29 @@ body {
     border-radius: 10px;
     border: none;
     outline: none;
-    font-size: 0.9rem;
+    font-size: 16px; /* prevents mobile zoom */
     background: #1e293b;
     color: white;
 }
 
 .chat-input button {
-    margin-left: 8px;
+    flex-shrink: 0;
+    height: 42px;
     background: #22c55e;
     border: none;
-    padding: 0 16px;
+    padding: 0 14px;
     border-radius: 10px;
     font-weight: 500;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 #micBtn {
+    flex-shrink: 0;
+    height: 42px;
     background: linear-gradient(145deg, #0ea5e9, #0284c7);
     color: white;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 /* 📱 MOBILE FRIENDLY CHANGES (ONLY ADDITION) */
@@ -175,6 +181,12 @@ body {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
+    @media (max-width: 480px) {
+  .chat-input {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 </style>
 </head>
 
@@ -252,4 +264,5 @@ body {
 
 </body>
 </html>
+
 
