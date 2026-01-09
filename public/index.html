@@ -125,6 +125,52 @@ body {
     font-size: 1.2rem;
 }
 
+/* 📱 MOBILE FRIENDLY CHANGES (ONLY ADDITION) */
+@media (max-width: 480px) {
+
+  body {
+    padding: 10px;
+  }
+
+  .chat-container {
+    width: 100%;
+    max-width: 100%;
+    height: 95svh;
+    border-radius: 14px;
+  }
+
+  .chat-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .chat-header p {
+    font-size: 0.75rem;
+  }
+
+  .message {
+    max-width: 90%;
+    font-size: 0.85rem;
+  }
+
+  .chat-input {
+    padding: 8px;
+  }
+
+  .chat-input input {
+    font-size: 16px; /* prevents mobile zoom */
+    padding: 8px;
+  }
+
+  .chat-input button {
+    padding: 0 12px;
+    font-size: 0.85rem;
+  }
+
+  #micBtn {
+    font-size: 1rem;
+  }
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
@@ -181,15 +227,12 @@ body {
     });
   }
 
-  // 🎤 MICROPHONE LOGIC STARTS HERE
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (SpeechRecognition) {
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
 
     micBtn.addEventListener("click", () => {
       recognition.start();
@@ -197,28 +240,16 @@ body {
     });
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      input.value = transcript;
+      input.value = event.results[0][0].transcript;
       micBtn.textContent = "🎤";
-    };
-
-    recognition.onerror = () => {
-      micBtn.textContent = "🎤";
-      alert("Microphone error. Please allow mic access.");
     };
 
     recognition.onend = () => {
       micBtn.textContent = "🎤";
     };
-  } else {
-    micBtn.disabled = true;
-    micBtn.textContent = "❌";
-    alert("Speech Recognition not supported in this browser.");
   }
 </script>
 
-
-
 </body>
-
 </html>
+
