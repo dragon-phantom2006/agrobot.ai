@@ -11,8 +11,9 @@ app.secret_key = "agroboat_secret"
 # ======================
 # CONFIG
 # ======================
-genai.configure(api_key="AIzaSyAiN5lT5R_rP75bZiwGsM7_sZuyKXlmd9A")
-WEATHER_KEY = "05540b589dd98a9f9750a6fcf8500242"
+import os
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+WEATHER_KEY = os.getenv("WEATHER_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///farmers.db"
 db = SQLAlchemy(app)
