@@ -4,22 +4,21 @@ import requests
 import os
 from flask_sqlalchemy import SQLAlchemy
 from PIL import Image
+import time
 
 app = Flask(__name__)
 app.secret_key = "agroboat_secret"
 
 # ======================
-# CONFIG
+# CONFIG (SAFE)
 # ======================
-import os
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 WEATHER_KEY = os.getenv("WEATHER_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///farmers.db"
 db = SQLAlchemy(app)
 
-model = genai.GenerativeModel("gemini-2.5-flash")
-chat_session = model.start_chat(history=[])
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ======================
 # DATABASE MODEL
@@ -29,6 +28,19 @@ class Farmer(db.Model):
     name = db.Column(db.String(50))
     crop = db.Column(db.String(50))
     soil = db.Column(db.String(50))
+
+# ======================
+# SAFE AI FUNCTION
+# ======================
+def safe_generate(prompt, retries=2):
+    for _ in range(retries):
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            print("AI ERROR:", e)
+            time.sleep(1)
+    return "⚠ AI service is busy or quota exceeded. Try again later."
 
 # ======================
 # WEATHER FUNCTIONS
@@ -41,29 +53,35 @@ def advisory_engine(desc):
     return ""
 
 def get_weather(city="Kolkata,IN"):
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_KEY}&units=metric"
-    res = requests.get(url).json()
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_KEY}&units=metric"
+        res = requests.get(url, timeout=5).json()
 
-    if "main" not in res:
-        return "Weather unavailable"
+        if "main" not in res:
+            return "Weather unavailable"
 
-    temp = res["main"]["temp"]
-    desc = res["weather"][0]["description"]
+        temp = res["main"]["temp"]
+        desc = res["weather"][0]["description"]
 
-    return f"Weather in {city}: {temp}°C, {desc}\n{advisory_engine(desc)}"
+        return f"Weather in {city}: {temp}°C, {desc}\n{advisory_engine(desc)}"
+    except Exception as e:
+        print("WEATHER ERROR:", e)
+        return "⚠ Weather service unavailable"
 
 def get_weather_by_coords(lat, lon):
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_KEY}&units=metric"
-    res = requests.get(url).json()
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_KEY}&units=metric"
+        res = requests.get(url, timeout=5).json()
 
-    if "main" not in res:
-        return "Weather unavailable"
+        if "main" not in res:
+            return "Weather unavailable"
 
-    temp = res["main"]["temp"]
-    desc = res["weather"][0]["description"]
+        temp = res["main"]["temp"]
+        desc = res["weather"][0]["description"]
 
-    return f"Temp: {temp}°C | {desc}\n{advisory_engine(desc)}"
-
+        return f"Temp: {temp}°C | {desc}\n{advisory_engine(desc)}"
+    except:
+        return "⚠ Weather service unavailable"
 
 # ======================
 # AGRICULTURE FEATURES
@@ -83,23 +101,29 @@ def fertilizer_advice(crop):
         "maize": "Apply nitrogen-rich fertilizer"
     }
     return rules.get(crop.lower(), "No fertilizer data.")
+
+def extract_crop(msg):
+    crops = ["rice", "wheat", "maize"]
+    for c in crops:
+        if c in msg:
+            return c
+    return None
+
 def search_disease(symptoms):
-    query = f"plant leaf disease {symptoms}"
-
-    url = "https://api.bing.microsoft.com/v7.0/search"
-    headers = {
-        "Ocp-Apim-Subscription-Key": "2b10iDH1eRqn3cZW7I6LXRwYcu"
-    }
-    params = {"q": query}
-
     try:
-        res = requests.get(url, headers=headers, params=params).json()
+        query = f"plant leaf disease {symptoms}"
 
+        url = "https://api.bing.microsoft.com/v7.0/search"
+        headers = {
+            "Ocp-Apim-Subscription-Key": os.getenv("BING_KEY")
+        }
+        params = {"q": query}
+
+        res = requests.get(url, headers=headers, params=params, timeout=5).json()
         results = res.get("webPages", {}).get("value", [])
 
         for r in results:
             title = r["name"].lower()
-
             if "blight" in title:
                 return "Blight Disease"
             if "leaf spot" in title:
@@ -108,7 +132,6 @@ def search_disease(symptoms):
                 return "Rust Disease"
 
         return "Leaf Disease"
-
     except:
         return "Unknown Disease"
 
@@ -121,25 +144,31 @@ def index():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    msg = data["message"].lower()
+    try:
+        data = request.get_json()
+        msg = data.get("message", "").lower()
 
-    if "rice" in msg:
-        session["crop"] = "rice"
-    if "wheat" in msg:
-        session["crop"] = "wheat"
+        crop = extract_crop(msg)
 
-    if "weather" in msg:
-        return jsonify({"reply": get_weather()})
+        if "weather" in msg:
+            return jsonify({"reply": get_weather()})
 
-    if "calendar" in msg and "crop" in session:
-        return jsonify({"reply": crop_calendar(session["crop"])})
+        if "fertilizer" in msg:
+            if not crop:
+                return jsonify({"reply": "🌾 Please specify crop (rice, wheat, maize)."})
+            return jsonify({"reply": fertilizer_advice(crop)})
 
-    if "fertilizer" in msg and "crop" in session:
-        return jsonify({"reply": fertilizer_advice(session["crop"])})
+        if "calendar" in msg:
+            if not crop:
+                return jsonify({"reply": "🌾 Please specify crop."})
+            return jsonify({"reply": crop_calendar(crop)})
 
-    response = chat_session.send_message(msg)
-    return jsonify({"reply": response.text})
+        reply = safe_generate(msg)
+        return jsonify({"reply": reply})
+
+    except Exception as e:
+        print("CHAT ERROR:", e)
+        return jsonify({"reply": "⚠ Server issue. Try again."})
 
 @app.route("/weather_coords", methods=["POST"])
 def weather_coords():
@@ -149,54 +178,35 @@ def weather_coords():
 @app.route("/detect_disease", methods=["POST"])
 def detect_disease():
     try:
-        file = request.files["image"]
+        file = request.files.get("image")
+        if not file:
+            return jsonify({"reply": "No image uploaded."})
+
         img = Image.open(file).convert("RGB")
 
-        # STEP 1: Extract symptoms using Gemini
-        symptom_prompt = """
-        Look at this plant leaf image and list only visible symptoms.
-        Example:
-        - brown spots
-        - yellow edges
-        - holes
-        - white powder
+        symptom_prompt = "List 3–5 visible plant leaf symptoms."
 
-        Give only 3-5 short symptom phrases.
-        """
-
-        symptom_response = model.generate_content([symptom_prompt, img])
-        symptoms = symptom_response.text.strip()
-
-        # STEP 2: Search disease using symptoms
+        symptoms = safe_generate([symptom_prompt, img])
         disease = search_disease(symptoms)
 
-        # STEP 3: Get treatment from chatbot
         final_prompt = f"""
-        A plant has the following symptoms:
-        {symptoms}
-
-        The most likely disease is: {disease}
-
-        Explain:
-        - Disease name
-        - Cause
-        - Treatment
-        - Prevention
-
-        Keep it simple for farmers.
+        Symptoms: {symptoms}
+        Disease: {disease}
+        Give cause, treatment, prevention simply.
         """
 
-        final_response = model.generate_content(final_prompt)
+        reply = safe_generate(final_prompt)
 
         return jsonify({
             "symptoms": symptoms,
             "disease": disease,
-            "reply": final_response.text
+            "reply": reply
         })
 
     except Exception as e:
         print("IMAGE ERROR:", e)
-        return jsonify({"reply": f"Error: {str(e)}"})
+        return jsonify({"reply": "⚠ Image processing failed."})
+
 @app.route("/save_profile", methods=["POST"])
 def save_profile():
     data = request.get_json()
@@ -213,9 +223,11 @@ def save_profile():
     return jsonify({"reply": "Profile saved!"})
 
 # ======================
-# RUN
+# RUN (Render Compatible)
 # ======================
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
