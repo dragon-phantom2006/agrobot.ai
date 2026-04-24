@@ -13,10 +13,10 @@ app.secret_key = "agroboat_secret"
 # MULTI API KEY SYSTEM
 # ======================
 API_KEYS = [
-    os.getenv("GEMINI_API_KEY_1"),
-    os.getenv("GEMINI_API_KEY_2"),
-    os.getenv("GEMINI_API_KEY_3"),
-    os.getenv("GEMINI_API_KEY_4"),
+    ("AIzaSyCZj30GuMl6KknWG6nrMXFpN5n9e0CYFn8"),
+    ("AIzaSyAanwEFla-GxPFV7LSXt0adupX7gG3AvbM"),
+    ("AIzaSyBNCLCwF7HwwY-kYR3NonsmqNLt_qIrRYg"),
+    ("AIzaSyBRpjWtlsCUOtuyxpDnN4OHMCQtGHEQuyA"),
 ]
 
 current_key_index = 0
