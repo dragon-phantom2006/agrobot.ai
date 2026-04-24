@@ -9,10 +9,14 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
-html,body{height:100%;}
+html,body{
+height:100%;
+width:100%;
+}
 
 body{
 min-height:100svh;
+padding:10px; /* ✅ added for mobile spacing */
 background-image:linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.4)),
 url("{{ url_for('static', filename='agro3.png') }}");
 background-size:cover;
@@ -23,10 +27,13 @@ align-items:center;
 justify-content:center;
 }
 
+/* ✅ UPDATED scaling */
 .chat-container{
 width:100%;
 max-width:420px;
-height:90vh;
+height:100%;
+max-height:90vh;
+min-height:500px;
 background:rgba(2,6,23,0.85);
 backdrop-filter:blur(12px);
 border-radius:18px;
@@ -34,6 +41,19 @@ display:flex;
 flex-direction:column;
 overflow:hidden;
 box-shadow:0 20px 50px rgba(0,0,0,0.4);
+}
+
+/* ✅ Mobile fix */
+@media (max-width: 480px){
+.chat-container{
+height:100%;
+max-height:100vh;
+border-radius:0;
+}
+
+body{
+padding:0;
+}
 }
 
 .chat-header{
@@ -130,7 +150,6 @@ to{opacity:1;transform:translateY(0);}
 <h1>🌱 AGROBOAT</h1>
 <p>Powered by CODE TO GROWTH</p>
 
-<!-- 🌍 LANGUAGE SELECT (ADDED) -->
 <select id="langSelect" style="margin-top:8px;padding:6px;border-radius:8px;">
 <option value="auto">🌐 Auto</option>
 <option value="en">English</option>
@@ -194,7 +213,6 @@ const micBtn=document.getElementById("micBtn");
 
 userInput.focus();
 
-/* 🌍 LANGUAGE STATE (ADDED) */
 let currentLang="auto";
 
 document.getElementById("langSelect").addEventListener("change",(e)=>{
@@ -241,7 +259,7 @@ method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 message:text,
-lang:currentLang   // ✅ ADDED
+lang:currentLang
 })
 })
 .then(r=>r.json())
@@ -264,7 +282,6 @@ userInput.addEventListener("keypress",e=>{
 if(e.key==="Enter") sendMessage();
 });
 
-/* 🎤 VOICE INPUT (UPDATED) */
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 
 if(SpeechRecognition){
@@ -288,7 +305,6 @@ recognition.onend=()=>micBtn.style.background="#0ea5e9";
 micBtn.disabled=true;
 }
 
-/* 📷 CAMERA */
 function openCamera(){
 document.getElementById("imageInput").click();
 }
@@ -302,7 +318,7 @@ showTyping();
 
 const formData=new FormData();
 formData.append("image",file);
-formData.append("lang",currentLang);  // ✅ ADDED
+formData.append("lang",currentLang);
 
 fetch("/detect_disease",{
 method:"POST",
