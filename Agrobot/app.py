@@ -10,15 +10,26 @@ app = Flask(__name__)
 app.secret_key = "agroboat_secret"
 
 # ======================
-# CONFIG (SAFE)
+# MULTI API KEY SYSTEM
 # ======================
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+API_KEYS = [
+    os.getenv("GEMINI_API_KEY_1"),
+    os.getenv("GEMINI_API_KEY_2"),
+    os.getenv("GEMINI_API_KEY_3"),
+    os.getenv("GEMINI_API_KEY_4"),
+]
+
+current_key_index = 0
+
+def get_model():
+    global current_key_index
+    genai.configure(api_key=API_KEYS[current_key_index])
+    return genai.GenerativeModel("gemini-1.5-flash")
+
 WEATHER_KEY = os.getenv("WEATHER_KEY")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///farmers.db"
 db = SQLAlchemy(app)
-
-model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ======================
 # DATABASE MODEL
@@ -30,17 +41,25 @@ class Farmer(db.Model):
     soil = db.Column(db.String(50))
 
 # ======================
-# SAFE AI FUNCTION
+# SAFE AI FUNCTION (ROTATING KEYS)
 # ======================
-def safe_generate(prompt, retries=2):
-    for _ in range(retries):
+def safe_generate(prompt):
+    global current_key_index
+
+    for _ in range(len(API_KEYS)):
         try:
+            model = get_model()
             response = model.generate_content(prompt)
             return response.text
+
         except Exception as e:
             print("AI ERROR:", e)
+
+            # 🔁 Switch API key
+            current_key_index = (current_key_index + 1) % len(API_KEYS)
             time.sleep(1)
-    return "⚠ AI service is busy or quota exceeded. Try again later."
+
+    return "⚠ AI service temporarily unavailable. Please try again later."
 
 # ======================
 # WEATHER FUNCTIONS
@@ -109,6 +128,18 @@ def extract_crop(msg):
             return c
     return None
 
+# ======================
+# GOVERNMENT SCHEMES
+# ======================
+def government_schemes():
+    return """📜 Government Schemes:
+• PM-KISAN: ₹6000/year support
+• Soil Health Card Scheme
+• PMFBY (Crop Insurance)
+• Kisan Credit Card
+
+Visit nearest agriculture office for full details."""
+
 def search_disease(symptoms):
     try:
         query = f"plant leaf disease {symptoms}"
@@ -158,10 +189,13 @@ def chat():
                 return jsonify({"reply": "🌾 Please specify crop (rice, wheat, maize)."})
             return jsonify({"reply": fertilizer_advice(crop)})
 
-        if "calendar" in msg:
+        if "calendar" in msg or "crop" in msg:
             if not crop:
                 return jsonify({"reply": "🌾 Please specify crop."})
             return jsonify({"reply": crop_calendar(crop)})
+
+        if "scheme" in msg or "government" in msg:
+            return jsonify({"reply": government_schemes()})
 
         reply = safe_generate(msg)
         return jsonify({"reply": reply})
@@ -223,7 +257,7 @@ def save_profile():
     return jsonify({"reply": "Profile saved!"})
 
 # ======================
-# RUN (Render Compatible)
+# RUN
 # ======================
 if __name__ == "__main__":
     with app.app_context():
